@@ -1,12 +1,27 @@
-FROM golang:1.16 as builder
-ENV GO111MODULE=on \
-    GOPROXY=https://goproxy.cn,direct
-WORKDIR /app
-COPY . .
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o main main.go
+FROM centos:7
+LABEL maintainer="chenshunli <123@qq.com>"
 
-FROM busybox:1.28.4
-WORKDIR /app
-COPY --from=builder /app/ .
-EXPOSE 8080
-CMD ["./main"]
+ENV PACKAGE_NAME="nginx-1.20.2"
+
+ADD ${PACKAGE_NAME}.tar.gz /usr/local/src/
+
+WORKDIR /usr/local/src/${PACKAGE_NAME}
+
+RUN yum -y install gcc gcc-c++ make zlib-devel pcre-devel openssl-devel \
+    && useradd -s/bin/nologin nginx
+
+RUN ./configure \
+    --prefix=/usr/local/nginx \
+    --user=nginx \
+    --group=nginx \
+    --with-ld-opt=-Wl,-rpath,$LUAJIT_LIB \
+    --with-http_stub_status_module\
+    --with-http_gzip_static_module\
+    --with-http_realip_module\
+    --with-http_ssl_module \
+    && make \
+    && make install
+
+ENV PATH="/usr/local/nginx/sbin:${PATH}"
+EXPOSE 80/tcp
+CMD ["/bin/sh","-c","nginx -g 'daemon off;'"]
