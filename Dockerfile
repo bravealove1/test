@@ -22,7 +22,7 @@ RUN ./configure \
     && make \
     && make install
 
-COPY html  /usr/local/nginx/html/ 
+COPY package  /usr/local/nginx/html/ 
 ENV PATH="/usr/local/nginx/sbin:${PATH}"
 EXPOSE 80/tcp
 CMD ["/bin/sh","-c","nginx -g 'daemon off;'"]
